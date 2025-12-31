@@ -39,17 +39,29 @@ A cross-platform, plugin-based emulator framework built for speedrunners and TAS
 
 | System | Status | Mappers | Notes |
 |--------|--------|---------|-------|
-| NES | Playable | 0, 1, 2, 3, 4, 7 | Covers ~70% of NES library |
+| NES | Playable | 0, 1, 2, 3, 4, 7, 9, 10, 11, 34, 66, 71, 79, 206 | Covers ~90% of NES library |
 | Game Boy | Planned | - | Next priority |
 | SNES | Planned | - | After GB |
 
 ### NES Mapper Coverage
+
+**Core Mappers:**
 - **Mapper 0 (NROM)** - Super Mario Bros., Donkey Kong
 - **Mapper 1 (MMC1)** - Zelda, Metroid, Final Fantasy (~25% of library)
 - **Mapper 2 (UxROM)** - Mega Man, Castlevania, Contra, Duck Tales
 - **Mapper 3 (CNROM)** - Arkanoid, Gradius, Solomon's Key
 - **Mapper 4 (MMC3)** - SMB3, Kirby, Mega Man 3-6 (scanline IRQ)
 - **Mapper 7 (AxROM)** - Battletoads, Marble Madness, RC Pro-Am
+
+**Extended Mappers:**
+- **Mapper 9 (MMC2)** - Punch-Out!!, Mike Tyson's Punch-Out!! (CHR latching)
+- **Mapper 10 (MMC4)** - Fire Emblem (Japan)
+- **Mapper 11 (Color Dreams)** - Bible Adventures, Crystal Mines (unlicensed)
+- **Mapper 34 (BNROM/NINA-001)** - Deadly Towers, Impossible Mission II
+- **Mapper 66 (GxROM)** - Super Mario Bros. + Duck Hunt multicart
+- **Mapper 71 (Camerica)** - Micro Machines, Fire Hawk, Quattro games
+- **Mapper 79 (NINA-03/06)** - Various AVE games
+- **Mapper 206 (DxROM/Namcot)** - Various Namco games, Tengen releases
 
 ## Building
 
@@ -204,7 +216,7 @@ veloce/
 ### Completed
 - [x] Core framework (window, audio, input, plugins)
 - [x] NES emulator (CPU, PPU, APU)
-- [x] Mappers 0, 1, 2, 3, 4, 7 (NROM, MMC1, UxROM, CNROM, MMC3, AxROM)
+- [x] Mappers 0, 1, 2, 3, 4, 7, 9, 10, 11, 34, 66, 71, 79, 206
 - [x] Save states (10 slots, hotkeys)
 - [x] Visual input configuration
 - [x] Per-platform controller bindings
@@ -225,7 +237,7 @@ veloce/
 - [ ] Game Boy Color support
 
 ### Then: More NES + SNES
-- [ ] Additional NES mappers (9, 10, 11, 66, 71, etc.)
+- [ ] Additional NES mappers (5, 16, 18, 19, 21, 22, 23, 24, 25, 69, etc.)
 - [ ] RAM watch panel
 - [ ] Game-specific auto-split plugins
 - [ ] SNES emulator plugin

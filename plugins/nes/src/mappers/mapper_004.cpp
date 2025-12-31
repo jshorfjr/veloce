@@ -22,9 +22,16 @@ void Mapper004::reset() {
     m_prg_mode = false;
     m_chr_mode = false;
 
-    for (int i = 0; i < 8; i++) {
-        m_registers[i] = 0;
-    }
+    // Initialize registers with proper power-on values
+    // This ensures CHR banks are mapped to unique locations at startup
+    m_registers[0] = 0;   // CHR 2KB bank 0 (selects 1KB banks 0,1)
+    m_registers[1] = 2;   // CHR 2KB bank 1 (selects 1KB banks 2,3)
+    m_registers[2] = 4;   // CHR 1KB bank 0
+    m_registers[3] = 5;   // CHR 1KB bank 1
+    m_registers[4] = 6;   // CHR 1KB bank 2
+    m_registers[5] = 7;   // CHR 1KB bank 3
+    m_registers[6] = 0;   // PRG 8KB bank 0
+    m_registers[7] = 1;   // PRG 8KB bank 1
 
     m_irq_counter = 0;
     m_irq_latch = 0;

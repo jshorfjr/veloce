@@ -19,6 +19,14 @@ add_library(nes_plugin SHARED
     src/mappers/mapper_003.cpp
     src/mappers/mapper_004.cpp
     src/mappers/mapper_007.cpp
+    src/mappers/mapper_009.cpp
+    src/mappers/mapper_010.cpp
+    src/mappers/mapper_011.cpp
+    src/mappers/mapper_034.cpp
+    src/mappers/mapper_066.cpp
+    src/mappers/mapper_071.cpp
+    src/mappers/mapper_079.cpp
+    src/mappers/mapper_206.cpp
 )
 
 target_include_directories(nes_plugin PRIVATE

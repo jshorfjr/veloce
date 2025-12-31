@@ -37,6 +37,7 @@ public:
 
     // DMA
     void oam_dma(uint8_t page);
+    int get_pending_dma_cycles();  // Returns and clears pending DMA cycles
 
     // Mapper scanline counter (for MMC3, etc.)
     void mapper_scanline();
@@ -45,7 +46,7 @@ public:
     bool mapper_irq_pending();
     void mapper_irq_clear();
 
-    // Get current mirror mode (0=horizontal, 1=vertical)
+    // Get current mirror mode (0=H, 1=V, 2=SingleScreen0, 3=SingleScreen1, 4=FourScreen)
     int get_mirror_mode() const;
 
     // Save state
@@ -66,6 +67,9 @@ private:
     uint32_t m_controller_state[2] = {0, 0};
     uint8_t m_controller_shift[2] = {0, 0};
     bool m_controller_strobe = false;
+
+    // DMA cycles pending (set by oam_dma, consumed by main loop)
+    int m_pending_dma_cycles = 0;
 };
 
 } // namespace nes

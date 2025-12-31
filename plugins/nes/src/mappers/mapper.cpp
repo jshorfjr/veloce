@@ -1,7 +1,10 @@
 #include "mapper.hpp"
 #include "mapper_000.hpp"
 #include "mapper_001.hpp"
+#include "mapper_002.hpp"
+#include "mapper_003.hpp"
 #include "mapper_004.hpp"
+#include "mapper_007.hpp"
 #include <iostream>
 
 namespace nes {
@@ -18,8 +21,14 @@ Mapper* create_mapper(int mapper_number,
             return new Mapper000(prg_rom, chr_rom, prg_ram, initial_mirror, has_chr_ram);
         case 1:
             return new Mapper001(prg_rom, chr_rom, prg_ram, initial_mirror, has_chr_ram);
+        case 2:
+            return new Mapper002(prg_rom, chr_rom, prg_ram, initial_mirror, has_chr_ram);
+        case 3:
+            return new Mapper003(prg_rom, chr_rom, prg_ram, initial_mirror, has_chr_ram);
         case 4:
             return new Mapper004(prg_rom, chr_rom, prg_ram, initial_mirror, has_chr_ram);
+        case 7:
+            return new Mapper007(prg_rom, chr_rom, prg_ram, initial_mirror, has_chr_ram);
         default:
             std::cerr << "Unsupported mapper: " << mapper_number << std::endl;
             return nullptr;

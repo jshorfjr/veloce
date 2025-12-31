@@ -148,8 +148,15 @@ void Bus::oam_dma(uint8_t page) {
             m_ppu->oam_write(i, data);
         }
     }
-    // DMA takes 513 or 514 CPU cycles
-    // This is handled in the CPU step
+    // DMA takes 513 or 514 CPU cycles (514 if on an odd CPU cycle)
+    // We use 513 as an approximation
+    m_pending_dma_cycles = 513;
+}
+
+int Bus::get_pending_dma_cycles() {
+    int cycles = m_pending_dma_cycles;
+    m_pending_dma_cycles = 0;
+    return cycles;
 }
 
 void Bus::mapper_scanline() {
@@ -173,8 +180,9 @@ void Bus::mapper_irq_clear() {
 
 int Bus::get_mirror_mode() const {
     if (m_cartridge) {
-        MirrorMode mode = m_cartridge->get_mirror_mode();
-        return (mode == MirrorMode::Horizontal) ? 0 : 1;
+        // Return the actual mirror mode value:
+        // 0=Horizontal, 1=Vertical, 2=SingleScreen0, 3=SingleScreen1, 4=FourScreen
+        return static_cast<int>(m_cartridge->get_mirror_mode());
     }
     return 0;  // Default to horizontal
 }

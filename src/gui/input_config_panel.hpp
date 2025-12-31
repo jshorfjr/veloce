@@ -26,6 +26,7 @@ public:
     void cancel_capture();
 
 private:
+    void render_platform_selector(Application& app);
     void render_controller_selector(Application& app);
     void render_controller_visual(Application& app);
     void render_binding_table(Application& app);

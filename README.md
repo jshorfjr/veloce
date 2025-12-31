@@ -39,14 +39,17 @@ A cross-platform, plugin-based emulator framework built for speedrunners and TAS
 
 | System | Status | Mappers | Notes |
 |--------|--------|---------|-------|
-| NES | Playable | 0, 1, 4 | NROM, MMC1, MMC3 |
+| NES | Playable | 0, 1, 2, 3, 4, 7 | Covers ~70% of NES library |
 | Game Boy | Planned | - | Next priority |
 | SNES | Planned | - | After GB |
 
 ### NES Mapper Coverage
 - **Mapper 0 (NROM)** - Super Mario Bros., Donkey Kong
 - **Mapper 1 (MMC1)** - Zelda, Metroid, Final Fantasy (~25% of library)
+- **Mapper 2 (UxROM)** - Mega Man, Castlevania, Contra, Duck Tales
+- **Mapper 3 (CNROM)** - Arkanoid, Gradius, Solomon's Key
 - **Mapper 4 (MMC3)** - SMB3, Kirby, Mega Man 3-6 (scanline IRQ)
+- **Mapper 7 (AxROM)** - Battletoads, Marble Madness, RC Pro-Am
 
 ## Building
 
@@ -201,7 +204,7 @@ veloce/
 ### Completed
 - [x] Core framework (window, audio, input, plugins)
 - [x] NES emulator (CPU, PPU, APU)
-- [x] Mappers 0, 1, 4 (NROM, MMC1, MMC3)
+- [x] Mappers 0, 1, 2, 3, 4, 7 (NROM, MMC1, UxROM, CNROM, MMC3, AxROM)
 - [x] Save states (10 slots, hotkeys)
 - [x] Visual input configuration
 - [x] Per-platform controller bindings
@@ -222,7 +225,7 @@ veloce/
 - [ ] Game Boy Color support
 
 ### Then: More NES + SNES
-- [ ] Additional NES mappers (2, 3, 7, 9, 10, etc.)
+- [ ] Additional NES mappers (9, 10, 11, 66, 71, etc.)
 - [ ] RAM watch panel
 - [ ] Game-specific auto-split plugins
 - [ ] SNES emulator plugin

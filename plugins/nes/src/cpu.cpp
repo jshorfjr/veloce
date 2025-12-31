@@ -85,35 +85,35 @@ int CPU::step() {
         case 0x1E: op_asl(addr_absolute_x(page_crossed)); cycles = 7; break;
 
         // BCC - Branch if Carry Clear
-        case 0x90: op_branch(!get_flag(FLAG_C)); cycles = 2; break;
+        case 0x90: cycles = 2 + op_branch(!get_flag(FLAG_C)); break;
 
         // BCS - Branch if Carry Set
-        case 0xB0: op_branch(get_flag(FLAG_C)); cycles = 2; break;
+        case 0xB0: cycles = 2 + op_branch(get_flag(FLAG_C)); break;
 
         // BEQ - Branch if Equal
-        case 0xF0: op_branch(get_flag(FLAG_Z)); cycles = 2; break;
+        case 0xF0: cycles = 2 + op_branch(get_flag(FLAG_Z)); break;
 
         // BIT - Bit Test
         case 0x24: op_bit(read(addr_zero_page())); cycles = 3; break;
         case 0x2C: op_bit(read(addr_absolute())); cycles = 4; break;
 
         // BMI - Branch if Minus
-        case 0x30: op_branch(get_flag(FLAG_N)); cycles = 2; break;
+        case 0x30: cycles = 2 + op_branch(get_flag(FLAG_N)); break;
 
         // BNE - Branch if Not Equal
-        case 0xD0: op_branch(!get_flag(FLAG_Z)); cycles = 2; break;
+        case 0xD0: cycles = 2 + op_branch(!get_flag(FLAG_Z)); break;
 
         // BPL - Branch if Positive
-        case 0x10: op_branch(!get_flag(FLAG_N)); cycles = 2; break;
+        case 0x10: cycles = 2 + op_branch(!get_flag(FLAG_N)); break;
 
         // BRK - Break
         case 0x00: op_brk(); cycles = 7; break;
 
         // BVC - Branch if Overflow Clear
-        case 0x50: op_branch(!get_flag(FLAG_V)); cycles = 2; break;
+        case 0x50: cycles = 2 + op_branch(!get_flag(FLAG_V)); break;
 
         // BVS - Branch if Overflow Set
-        case 0x70: op_branch(get_flag(FLAG_V)); cycles = 2; break;
+        case 0x70: cycles = 2 + op_branch(get_flag(FLAG_V)); break;
 
         // CLC - Clear Carry Flag
         case 0x18: set_flag(FLAG_C, false); cycles = 2; break;
@@ -320,7 +320,103 @@ int CPU::step() {
         // TYA - Transfer Y to Accumulator
         case 0x98: m_a = m_y; update_zero_negative(m_a); cycles = 2; break;
 
-        // Illegal/unofficial opcodes - treat as NOP
+        // ============== Unofficial/Illegal Opcodes ==============
+
+        // LAX - Load A and X with same value
+        case 0xA7: { uint8_t v = read(addr_zero_page()); m_a = m_x = v; update_zero_negative(v); cycles = 3; break; }
+        case 0xB7: { uint8_t v = read(addr_zero_page_y()); m_a = m_x = v; update_zero_negative(v); cycles = 4; break; }
+        case 0xAF: { uint8_t v = read(addr_absolute()); m_a = m_x = v; update_zero_negative(v); cycles = 4; break; }
+        case 0xBF: { uint8_t v = read(addr_absolute_y(page_crossed)); m_a = m_x = v; update_zero_negative(v); cycles = 4 + (page_crossed ? 1 : 0); break; }
+        case 0xA3: { uint8_t v = read(addr_indirect_x()); m_a = m_x = v; update_zero_negative(v); cycles = 6; break; }
+        case 0xB3: { uint8_t v = read(addr_indirect_y(page_crossed)); m_a = m_x = v; update_zero_negative(v); cycles = 5 + (page_crossed ? 1 : 0); break; }
+
+        // SAX - Store A AND X
+        case 0x87: write(addr_zero_page(), m_a & m_x); cycles = 3; break;
+        case 0x97: write(addr_zero_page_y(), m_a & m_x); cycles = 4; break;
+        case 0x8F: write(addr_absolute(), m_a & m_x); cycles = 4; break;
+        case 0x83: write(addr_indirect_x(), m_a & m_x); cycles = 6; break;
+
+        // DCP - Decrement memory then Compare with A
+        case 0xC7: { uint16_t a = addr_zero_page(); uint8_t v = read(a) - 1; write(a, v); op_cmp(m_a, v); cycles = 5; break; }
+        case 0xD7: { uint16_t a = addr_zero_page_x(); uint8_t v = read(a) - 1; write(a, v); op_cmp(m_a, v); cycles = 6; break; }
+        case 0xCF: { uint16_t a = addr_absolute(); uint8_t v = read(a) - 1; write(a, v); op_cmp(m_a, v); cycles = 6; break; }
+        case 0xDF: { uint16_t a = addr_absolute_x(page_crossed); uint8_t v = read(a) - 1; write(a, v); op_cmp(m_a, v); cycles = 7; break; }
+        case 0xDB: { uint16_t a = addr_absolute_y(page_crossed); uint8_t v = read(a) - 1; write(a, v); op_cmp(m_a, v); cycles = 7; break; }
+        case 0xC3: { uint16_t a = addr_indirect_x(); uint8_t v = read(a) - 1; write(a, v); op_cmp(m_a, v); cycles = 8; break; }
+        case 0xD3: { uint16_t a = addr_indirect_y(page_crossed); uint8_t v = read(a) - 1; write(a, v); op_cmp(m_a, v); cycles = 8; break; }
+
+        // ISB/ISC - Increment memory then Subtract from A
+        case 0xE7: { uint16_t a = addr_zero_page(); uint8_t v = read(a) + 1; write(a, v); op_sbc(v); cycles = 5; break; }
+        case 0xF7: { uint16_t a = addr_zero_page_x(); uint8_t v = read(a) + 1; write(a, v); op_sbc(v); cycles = 6; break; }
+        case 0xEF: { uint16_t a = addr_absolute(); uint8_t v = read(a) + 1; write(a, v); op_sbc(v); cycles = 6; break; }
+        case 0xFF: { uint16_t a = addr_absolute_x(page_crossed); uint8_t v = read(a) + 1; write(a, v); op_sbc(v); cycles = 7; break; }
+        case 0xFB: { uint16_t a = addr_absolute_y(page_crossed); uint8_t v = read(a) + 1; write(a, v); op_sbc(v); cycles = 7; break; }
+        case 0xE3: { uint16_t a = addr_indirect_x(); uint8_t v = read(a) + 1; write(a, v); op_sbc(v); cycles = 8; break; }
+        case 0xF3: { uint16_t a = addr_indirect_y(page_crossed); uint8_t v = read(a) + 1; write(a, v); op_sbc(v); cycles = 8; break; }
+
+        // SLO - Shift Left then OR with A
+        case 0x07: { uint16_t a = addr_zero_page(); uint8_t v = read(a); set_flag(FLAG_C, v & 0x80); v <<= 1; write(a, v); m_a |= v; update_zero_negative(m_a); cycles = 5; break; }
+        case 0x17: { uint16_t a = addr_zero_page_x(); uint8_t v = read(a); set_flag(FLAG_C, v & 0x80); v <<= 1; write(a, v); m_a |= v; update_zero_negative(m_a); cycles = 6; break; }
+        case 0x0F: { uint16_t a = addr_absolute(); uint8_t v = read(a); set_flag(FLAG_C, v & 0x80); v <<= 1; write(a, v); m_a |= v; update_zero_negative(m_a); cycles = 6; break; }
+        case 0x1F: { uint16_t a = addr_absolute_x(page_crossed); uint8_t v = read(a); set_flag(FLAG_C, v & 0x80); v <<= 1; write(a, v); m_a |= v; update_zero_negative(m_a); cycles = 7; break; }
+        case 0x1B: { uint16_t a = addr_absolute_y(page_crossed); uint8_t v = read(a); set_flag(FLAG_C, v & 0x80); v <<= 1; write(a, v); m_a |= v; update_zero_negative(m_a); cycles = 7; break; }
+        case 0x03: { uint16_t a = addr_indirect_x(); uint8_t v = read(a); set_flag(FLAG_C, v & 0x80); v <<= 1; write(a, v); m_a |= v; update_zero_negative(m_a); cycles = 8; break; }
+        case 0x13: { uint16_t a = addr_indirect_y(page_crossed); uint8_t v = read(a); set_flag(FLAG_C, v & 0x80); v <<= 1; write(a, v); m_a |= v; update_zero_negative(m_a); cycles = 8; break; }
+
+        // RLA - Rotate Left then AND with A
+        case 0x27: { uint16_t a = addr_zero_page(); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 1 : 0; set_flag(FLAG_C, v & 0x80); v = (v << 1) | c; write(a, v); m_a &= v; update_zero_negative(m_a); cycles = 5; break; }
+        case 0x37: { uint16_t a = addr_zero_page_x(); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 1 : 0; set_flag(FLAG_C, v & 0x80); v = (v << 1) | c; write(a, v); m_a &= v; update_zero_negative(m_a); cycles = 6; break; }
+        case 0x2F: { uint16_t a = addr_absolute(); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 1 : 0; set_flag(FLAG_C, v & 0x80); v = (v << 1) | c; write(a, v); m_a &= v; update_zero_negative(m_a); cycles = 6; break; }
+        case 0x3F: { uint16_t a = addr_absolute_x(page_crossed); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 1 : 0; set_flag(FLAG_C, v & 0x80); v = (v << 1) | c; write(a, v); m_a &= v; update_zero_negative(m_a); cycles = 7; break; }
+        case 0x3B: { uint16_t a = addr_absolute_y(page_crossed); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 1 : 0; set_flag(FLAG_C, v & 0x80); v = (v << 1) | c; write(a, v); m_a &= v; update_zero_negative(m_a); cycles = 7; break; }
+        case 0x23: { uint16_t a = addr_indirect_x(); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 1 : 0; set_flag(FLAG_C, v & 0x80); v = (v << 1) | c; write(a, v); m_a &= v; update_zero_negative(m_a); cycles = 8; break; }
+        case 0x33: { uint16_t a = addr_indirect_y(page_crossed); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 1 : 0; set_flag(FLAG_C, v & 0x80); v = (v << 1) | c; write(a, v); m_a &= v; update_zero_negative(m_a); cycles = 8; break; }
+
+        // SRE - Shift Right then XOR with A
+        case 0x47: { uint16_t a = addr_zero_page(); uint8_t v = read(a); set_flag(FLAG_C, v & 0x01); v >>= 1; write(a, v); m_a ^= v; update_zero_negative(m_a); cycles = 5; break; }
+        case 0x57: { uint16_t a = addr_zero_page_x(); uint8_t v = read(a); set_flag(FLAG_C, v & 0x01); v >>= 1; write(a, v); m_a ^= v; update_zero_negative(m_a); cycles = 6; break; }
+        case 0x4F: { uint16_t a = addr_absolute(); uint8_t v = read(a); set_flag(FLAG_C, v & 0x01); v >>= 1; write(a, v); m_a ^= v; update_zero_negative(m_a); cycles = 6; break; }
+        case 0x5F: { uint16_t a = addr_absolute_x(page_crossed); uint8_t v = read(a); set_flag(FLAG_C, v & 0x01); v >>= 1; write(a, v); m_a ^= v; update_zero_negative(m_a); cycles = 7; break; }
+        case 0x5B: { uint16_t a = addr_absolute_y(page_crossed); uint8_t v = read(a); set_flag(FLAG_C, v & 0x01); v >>= 1; write(a, v); m_a ^= v; update_zero_negative(m_a); cycles = 7; break; }
+        case 0x43: { uint16_t a = addr_indirect_x(); uint8_t v = read(a); set_flag(FLAG_C, v & 0x01); v >>= 1; write(a, v); m_a ^= v; update_zero_negative(m_a); cycles = 8; break; }
+        case 0x53: { uint16_t a = addr_indirect_y(page_crossed); uint8_t v = read(a); set_flag(FLAG_C, v & 0x01); v >>= 1; write(a, v); m_a ^= v; update_zero_negative(m_a); cycles = 8; break; }
+
+        // RRA - Rotate Right then Add with carry
+        case 0x67: { uint16_t a = addr_zero_page(); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 0x80 : 0; set_flag(FLAG_C, v & 0x01); v = (v >> 1) | c; write(a, v); op_adc(v); cycles = 5; break; }
+        case 0x77: { uint16_t a = addr_zero_page_x(); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 0x80 : 0; set_flag(FLAG_C, v & 0x01); v = (v >> 1) | c; write(a, v); op_adc(v); cycles = 6; break; }
+        case 0x6F: { uint16_t a = addr_absolute(); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 0x80 : 0; set_flag(FLAG_C, v & 0x01); v = (v >> 1) | c; write(a, v); op_adc(v); cycles = 6; break; }
+        case 0x7F: { uint16_t a = addr_absolute_x(page_crossed); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 0x80 : 0; set_flag(FLAG_C, v & 0x01); v = (v >> 1) | c; write(a, v); op_adc(v); cycles = 7; break; }
+        case 0x7B: { uint16_t a = addr_absolute_y(page_crossed); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 0x80 : 0; set_flag(FLAG_C, v & 0x01); v = (v >> 1) | c; write(a, v); op_adc(v); cycles = 7; break; }
+        case 0x63: { uint16_t a = addr_indirect_x(); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 0x80 : 0; set_flag(FLAG_C, v & 0x01); v = (v >> 1) | c; write(a, v); op_adc(v); cycles = 8; break; }
+        case 0x73: { uint16_t a = addr_indirect_y(page_crossed); uint8_t v = read(a); uint8_t c = get_flag(FLAG_C) ? 0x80 : 0; set_flag(FLAG_C, v & 0x01); v = (v >> 1) | c; write(a, v); op_adc(v); cycles = 8; break; }
+
+        // ANC - AND with A, copy N to C
+        case 0x0B: case 0x2B: { m_a &= read(addr_immediate()); update_zero_negative(m_a); set_flag(FLAG_C, m_a & 0x80); cycles = 2; break; }
+
+        // ALR/ASR - AND with A, then LSR
+        case 0x4B: { m_a &= read(addr_immediate()); set_flag(FLAG_C, m_a & 0x01); m_a >>= 1; update_zero_negative(m_a); cycles = 2; break; }
+
+        // ARR - AND with A, then ROR
+        case 0x6B: { m_a &= read(addr_immediate()); m_a = (m_a >> 1) | (get_flag(FLAG_C) ? 0x80 : 0); update_zero_negative(m_a); set_flag(FLAG_C, m_a & 0x40); set_flag(FLAG_V, ((m_a >> 6) ^ (m_a >> 5)) & 1); cycles = 2; break; }
+
+        // SBX/AXS - (A AND X) - imm -> X
+        case 0xCB: { uint8_t v = read(addr_immediate()); uint8_t t = (m_a & m_x) - v; set_flag(FLAG_C, (m_a & m_x) >= v); m_x = t; update_zero_negative(m_x); cycles = 2; break; }
+
+        // Unofficial SBC immediate (duplicate of 0xE9)
+        case 0xEB: op_sbc(read(addr_immediate())); cycles = 2; break;
+
+        // LAX immediate (unstable - uses (A | 0xEE) & X & imm, but many emulators use simpler behavior)
+        case 0xAB: { uint8_t v = read(addr_immediate()); m_a = m_x = (m_a | 0xEE) & v; update_zero_negative(m_a); cycles = 2; break; }
+
+        // Unofficial NOPs (various addressing modes)
+        case 0x1A: case 0x3A: case 0x5A: case 0x7A: case 0xDA: case 0xFA: cycles = 2; break;  // NOP implied
+        case 0x80: case 0x82: case 0x89: case 0xC2: case 0xE2: m_pc++; cycles = 2; break;  // NOP immediate (skip 1 byte)
+        case 0x04: case 0x44: case 0x64: m_pc++; cycles = 3; break;  // NOP zero page (skip 1 byte)
+        case 0x14: case 0x34: case 0x54: case 0x74: case 0xD4: case 0xF4: m_pc++; cycles = 4; break;  // NOP zero page,X (skip 1 byte)
+        case 0x0C: m_pc += 2; cycles = 4; break;  // NOP absolute (skip 2 bytes)
+        case 0x1C: case 0x3C: case 0x5C: case 0x7C: case 0xDC: case 0xFC: { addr_absolute_x(page_crossed); cycles = 4 + (page_crossed ? 1 : 0); break; }  // NOP absolute,X
+
+        // Unknown/remaining opcodes - treat as NOP
         default: cycles = 2; break;
     }
 
@@ -486,13 +582,18 @@ void CPU::op_bit(uint8_t value) {
     set_flag(FLAG_V, (value & 0x40) != 0);
 }
 
-void CPU::op_branch(bool condition) {
+int CPU::op_branch(bool condition) {
     int8_t offset = static_cast<int8_t>(read(m_pc++));
     if (condition) {
         uint16_t old_pc = m_pc;
         m_pc += offset;
         // Branch taken adds 1 cycle, page crossing adds another
+        if ((old_pc & 0xFF00) != (m_pc & 0xFF00)) {
+            return 2;  // Page crossed: +2 cycles
+        }
+        return 1;  // Same page: +1 cycle
     }
+    return 0;  // Branch not taken: no extra cycles
 }
 
 void CPU::op_brk() {

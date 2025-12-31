@@ -206,6 +206,9 @@ void Application::run() {
 }
 
 void Application::shutdown() {
+    // Save input config before shutdown
+    m_input_manager->save_platform_config(m_input_manager->get_current_platform());
+
     m_gui_manager->shutdown();
     m_plugin_manager->shutdown();
     m_audio_manager->shutdown();

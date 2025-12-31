@@ -69,7 +69,7 @@ private:
     void op_asl(uint16_t address);
     void op_asl_a();
     void op_bit(uint8_t value);
-    void op_branch(bool condition);
+    int op_branch(bool condition);  // Returns extra cycles (0, 1, or 2)
     void op_brk();
     void op_cmp(uint8_t reg, uint8_t value);
     void op_dec(uint16_t address);

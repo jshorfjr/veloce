@@ -170,6 +170,7 @@ void PPU::step() {
             m_v = (m_v & ~0x7BE0) | (m_t & 0x7BE0);
         }
 
+
         // Prefetch first two tiles for scanline 0 during cycles 321-336
         if (m_cycle >= 321 && m_cycle <= 336 && (m_mask & 0x18) != 0) {
             switch ((m_cycle - 1) % 8) {
@@ -333,18 +334,31 @@ uint8_t PPU::ppu_read(uint16_t address) {
         // Nametables with mirroring - get current mode from mapper
         address &= 0x0FFF;
         int mirror = m_bus.get_mirror_mode();
-        if (mirror == 0) {  // Horizontal mirroring
-            // NT0($2000) and NT1($2400) share first 1KB
-            // NT2($2800) and NT3($2C00) share second 1KB
-            if (address >= 0x0800) {
-                address = 0x0400 + (address & 0x03FF);  // Map to second 1KB
-            } else {
-                address = address & 0x03FF;  // Map to first 1KB
-            }
-        } else {  // Vertical mirroring
-            // NT0($2000) and NT2($2800) share first 1KB
-            // NT1($2400) and NT3($2C00) share second 1KB
-            address &= 0x07FF;
+        switch (mirror) {
+            case 0:  // Horizontal mirroring
+                // NT0($2000) and NT1($2400) share first 1KB
+                // NT2($2800) and NT3($2C00) share second 1KB
+                if (address >= 0x0800) {
+                    address = 0x0400 + (address & 0x03FF);
+                } else {
+                    address = address & 0x03FF;
+                }
+                break;
+            case 1:  // Vertical mirroring
+                // NT0($2000) and NT2($2800) share first 1KB
+                // NT1($2400) and NT3($2C00) share second 1KB
+                address &= 0x07FF;
+                break;
+            case 2:  // Single-screen, lower bank (first 1KB)
+                address &= 0x03FF;
+                break;
+            case 3:  // Single-screen, upper bank (second 1KB)
+                address = 0x0400 + (address & 0x03FF);
+                break;
+            case 4:  // Four-screen (no mirroring, needs 4KB VRAM on cart)
+            default:
+                address &= 0x0FFF;
+                break;
         }
         return m_nametable[address];
     }
@@ -368,18 +382,27 @@ void PPU::ppu_write(uint16_t address, uint8_t value) {
         // Nametables with mirroring - get current mode from mapper
         address &= 0x0FFF;
         int mirror = m_bus.get_mirror_mode();
-        if (mirror == 0) {  // Horizontal mirroring
-            // NT0($2000) and NT1($2400) share first 1KB
-            // NT2($2800) and NT3($2C00) share second 1KB
-            if (address >= 0x0800) {
-                address = 0x0400 + (address & 0x03FF);  // Map to second 1KB
-            } else {
-                address = address & 0x03FF;  // Map to first 1KB
-            }
-        } else {  // Vertical mirroring
-            // NT0($2000) and NT2($2800) share first 1KB
-            // NT1($2400) and NT3($2C00) share second 1KB
-            address &= 0x07FF;
+        switch (mirror) {
+            case 0:  // Horizontal mirroring
+                if (address >= 0x0800) {
+                    address = 0x0400 + (address & 0x03FF);
+                } else {
+                    address = address & 0x03FF;
+                }
+                break;
+            case 1:  // Vertical mirroring
+                address &= 0x07FF;
+                break;
+            case 2:  // Single-screen, lower bank (first 1KB)
+                address &= 0x03FF;
+                break;
+            case 3:  // Single-screen, upper bank (second 1KB)
+                address = 0x0400 + (address & 0x03FF);
+                break;
+            case 4:  // Four-screen
+            default:
+                address &= 0x0FFF;
+                break;
         }
         m_nametable[address] = value;
     }

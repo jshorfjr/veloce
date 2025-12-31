@@ -186,6 +186,13 @@ void NESPlugin::run_frame(const emu::InputState& input) {
         int cpu_cycles = m_cpu->step();
         m_total_cycles += cpu_cycles;
 
+        // Check for OAM DMA (takes 513-514 CPU cycles)
+        int dma_cycles = m_bus->get_pending_dma_cycles();
+        if (dma_cycles > 0) {
+            cpu_cycles += dma_cycles;
+            m_total_cycles += dma_cycles;
+        }
+
         // Step PPU (3 PPU cycles per CPU cycle)
         for (int i = 0; i < cpu_cycles * 3; i++) {
             m_ppu->step();

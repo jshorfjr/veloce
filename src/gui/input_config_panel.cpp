@@ -6,8 +6,31 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <SDL.h>
+#include <algorithm>
+#include <vector>
 
 namespace emu {
+
+// Helper to get available platforms from loaded plugins
+static std::vector<std::string> get_available_platforms(const PluginManager& plugins) {
+    std::vector<std::string> platforms;
+    for (const auto& plugin : plugins.get_plugins()) {
+        if (plugin.instance) {
+            platforms.push_back(plugin.name);
+        }
+    }
+    return platforms;
+}
+
+// Helper to get controller layout for a platform from the plugin
+static const ControllerLayoutInfo* get_plugin_layout(const PluginManager& plugins, const std::string& platform) {
+    for (const auto& plugin : plugins.get_plugins()) {
+        if (plugin.instance && plugin.name == platform) {
+            return plugin.instance->get_controller_layout();
+        }
+    }
+    return nullptr;
+}
 
 // Colors for controller rendering
 namespace colors {
@@ -34,16 +57,11 @@ bool InputConfigPanel::render(Application& app) {
     // This blocks game input so the game doesn't receive inputs during configuration
     input.set_input_capture_mode(true);
 
-    // Get current platform from loaded plugin or input manager
-    auto& plugin_manager = app.get_plugin_manager();
-    if (plugin_manager.get_active_plugin()) {
-        m_current_platform = plugin_manager.get_active_plugin()->get_info().name;
-    } else {
-        m_current_platform = input.get_current_platform();
-    }
+    // Get current platform from input manager
+    m_current_platform = input.get_current_platform();
 
-    // Platform display
-    ImGui::Text("Platform: %s", m_current_platform.c_str());
+    // Platform selector dropdown
+    render_platform_selector(app);
 
     // Toggle between visual and table view
     ImGui::SameLine(ImGui::GetWindowWidth() - 150);
@@ -72,10 +90,12 @@ bool InputConfigPanel::render(Application& app) {
 
     ImGui::SameLine();
 
-    if (ImGui::Button("Save & Close")) {
-        input.save_platform_config(m_current_platform);
+    if (ImGui::Button("Close")) {
         should_close = true;
     }
+
+    ImGui::SameLine();
+    ImGui::TextDisabled("(Changes are saved automatically)");
 
     // Show help text when capturing
     if (m_waiting_for_input != VirtualButton::COUNT) {
@@ -106,10 +126,11 @@ bool InputConfigPanel::render(Application& app) {
 
     m_hovered_button = VirtualButton::COUNT;  // Reset for next frame
 
-    // Clear capture mode when panel is closing
+    // Clear capture mode when panel is closing and auto-save
     if (should_close) {
         input.set_input_capture_mode(false);
         m_waiting_for_input = VirtualButton::COUNT;  // Cancel any pending capture
+        input.save_platform_config(m_current_platform);  // Auto-save on close
     }
 
     return should_close;
@@ -158,14 +179,65 @@ void InputConfigPanel::render_controller_selector(Application& app) {
     }
 }
 
+void InputConfigPanel::render_platform_selector(Application& app) {
+    auto& input = app.get_input_manager();
+    auto& plugins = app.get_plugin_manager();
+
+    // Get available platforms from loaded plugins
+    auto available_platforms = get_available_platforms(plugins);
+
+    // If no plugins loaded, show message
+    if (available_platforms.empty()) {
+        ImGui::TextDisabled("No emulator plugins loaded");
+        return;
+    }
+
+    // Find current platform index
+    int current_index = 0;
+    for (size_t i = 0; i < available_platforms.size(); i++) {
+        if (available_platforms[i] == m_current_platform) {
+            current_index = static_cast<int>(i);
+            break;
+        }
+    }
+
+    // If current platform is not in list, switch to first available
+    if (std::find(available_platforms.begin(), available_platforms.end(), m_current_platform) == available_platforms.end()) {
+        m_current_platform = available_platforms[0];
+        input.set_current_platform(m_current_platform);
+        current_index = 0;
+    }
+
+    ImGui::Text("Platform:");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(100);
+
+    if (ImGui::BeginCombo("##Platform", m_current_platform.c_str())) {
+        for (size_t i = 0; i < available_platforms.size(); i++) {
+            bool is_selected = (current_index == static_cast<int>(i));
+            if (ImGui::Selectable(available_platforms[i].c_str(), is_selected)) {
+                // Save current platform config before switching
+                input.save_platform_config(m_current_platform);
+                // Switch to new platform
+                input.set_current_platform(available_platforms[i]);
+                m_current_platform = available_platforms[i];
+            }
+            if (is_selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+}
+
 void InputConfigPanel::render_controller_visual(Application& app) {
     auto& input = app.get_input_manager();
+    auto& plugins = app.get_plugin_manager();
 
-    // Get controller layout from input manager (set by emulator plugin)
-    const ControllerLayoutInfo* layout = input.get_controller_layout();
-
+    // Get controller layout from the plugin for this platform
+    const ControllerLayoutInfo* layout = get_plugin_layout(plugins, m_current_platform);
     if (!layout) {
-        ImGui::Text("No controller layout available. Load a ROM first.");
+        ImGui::TextDisabled("No controller layout available for %s", m_current_platform.c_str());
         return;
     }
 

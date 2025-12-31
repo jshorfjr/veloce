@@ -278,8 +278,12 @@ void Cartridge::save_state(std::vector<uint8_t>& data) {
         write_array(data, m_prg_ram.data(), m_prg_ram.size());
     }
 
-    // Save CHR RAM if present
+    // Save CHR RAM if present (important for games that modify pattern tables)
     write_value(data, static_cast<uint8_t>(m_has_chr_ram ? 1 : 0));
+    if (m_has_chr_ram && !m_chr_rom.empty()) {
+        write_value(data, static_cast<uint32_t>(m_chr_rom.size()));
+        write_array(data, m_chr_rom.data(), m_chr_rom.size());
+    }
 
     // Save mapper state
     if (m_mapper) {
@@ -293,15 +297,26 @@ void Cartridge::load_state(const uint8_t*& data, size_t& remaining) {
     read_value(data, remaining, prg_ram_size);
     if (prg_ram_size > 0 && m_prg_ram.size() == prg_ram_size) {
         read_array(data, remaining, m_prg_ram.data(), prg_ram_size);
-    } else if (prg_ram_size > 0) {
+    } else if (prg_ram_size > 0 && remaining >= prg_ram_size) {
         // Skip if sizes don't match
         data += prg_ram_size;
         remaining -= prg_ram_size;
     }
 
-    // Load CHR RAM flag
+    // Load CHR RAM
     uint8_t chr_ram_flag;
     read_value(data, remaining, chr_ram_flag);
+    if (chr_ram_flag && m_has_chr_ram) {
+        uint32_t chr_ram_size;
+        read_value(data, remaining, chr_ram_size);
+        if (chr_ram_size > 0 && m_chr_rom.size() == chr_ram_size && remaining >= chr_ram_size) {
+            read_array(data, remaining, m_chr_rom.data(), chr_ram_size);
+        } else if (chr_ram_size > 0 && remaining >= chr_ram_size) {
+            // Skip if sizes don't match
+            data += chr_ram_size;
+            remaining -= chr_ram_size;
+        }
+    }
 
     // Load mapper state
     if (m_mapper) {

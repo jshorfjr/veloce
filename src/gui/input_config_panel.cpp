@@ -60,6 +60,9 @@ bool InputConfigPanel::render(Application& app) {
     // Get current platform from input manager
     m_current_platform = input.get_current_platform();
 
+    // Sync selected controller with input manager
+    m_selected_controller = input.get_active_controller();
+
     // Platform selector dropdown
     render_platform_selector(app);
 
@@ -162,6 +165,8 @@ void InputConfigPanel::render_controller_selector(Application& app) {
             if (ImGui::Selectable(controllers[i].second.c_str(), is_selected)) {
                 m_selected_controller = controllers[i].first;
                 input.set_active_controller(m_selected_controller);
+                // Save config immediately so controller choice persists
+                input.save_platform_config(m_current_platform);
             }
             if (is_selected) {
                 ImGui::SetItemDefaultFocus();

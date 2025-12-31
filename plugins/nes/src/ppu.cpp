@@ -121,6 +121,12 @@ void PPU::step() {
             evaluate_sprites();
         }
 
+        // MMC3 scanline counter - clock at cycle 260 during sprite fetch phase
+        // This timing is critical for games like Kirby's Adventure that use mid-screen IRQs
+        if (m_cycle == 260 && (m_mask & 0x18) != 0) {
+            m_bus.mapper_scanline();
+        }
+
         // Prefetch first two tiles for next scanline during cycles 321-336
         // This primes the shifters so pixels 0-15 of the next scanline render correctly
         if (m_cycle >= 321 && m_cycle <= 336 && (m_mask & 0x18) != 0) {
@@ -176,6 +182,11 @@ void PPU::step() {
             evaluate_sprites_for_scanline(0);
         }
 
+        // MMC3 scanline counter also clocks on pre-render scanline
+        if (m_cycle == 260 && (m_mask & 0x18) != 0) {
+            m_bus.mapper_scanline();
+        }
+
         // Prefetch first two tiles for scanline 0 during cycles 321-336
         if (m_cycle >= 321 && m_cycle <= 336 && (m_mask & 0x18) != 0) {
             switch ((m_cycle - 1) % 8) {
@@ -226,13 +237,6 @@ void PPU::step() {
     m_cycle++;
     if (m_cycle > 340) {
         m_cycle = 0;
-
-        // Call mapper scanline counter at end of visible scanlines
-        // when rendering is enabled (for MMC3 IRQ)
-        if (m_scanline < 240 && (m_mask & 0x18) != 0) {
-            m_bus.mapper_scanline();
-        }
-
         m_scanline++;
         if (m_scanline > 261) {
             m_scanline = 0;

@@ -416,6 +416,104 @@ int CPU::step() {
         case 0x0C: m_pc += 2; cycles = 4; break;  // NOP absolute (skip 2 bytes)
         case 0x1C: case 0x3C: case 0x5C: case 0x7C: case 0xDC: case 0xFC: { addr_absolute_x(page_crossed); cycles = 4 + (page_crossed ? 1 : 0); break; }  // NOP absolute,X
 
+        // SHY - Store Y AND (high byte + 1) absolute,X (unstable)
+        case 0x9C: {
+            uint8_t lo = read(m_pc++);
+            uint8_t hi = read(m_pc++);
+            uint8_t val = m_y & (hi + 1);
+            uint16_t addr = ((static_cast<uint16_t>(hi) << 8) | lo) + m_x;
+            if ((lo + m_x) > 0xFF) {
+                addr = (static_cast<uint16_t>(val) << 8) | ((lo + m_x) & 0xFF);
+            }
+            write(addr, val);
+            cycles = 5;
+            break;
+        }
+
+        // SHX - Store X AND (high byte + 1) absolute,Y (unstable)
+        case 0x9E: {
+            uint8_t lo = read(m_pc++);
+            uint8_t hi = read(m_pc++);
+            uint8_t val = m_x & (hi + 1);
+            uint16_t addr = ((static_cast<uint16_t>(hi) << 8) | lo) + m_y;
+            if ((lo + m_y) > 0xFF) {
+                addr = (static_cast<uint16_t>(val) << 8) | ((lo + m_y) & 0xFF);
+            }
+            write(addr, val);
+            cycles = 5;
+            break;
+        }
+
+        // SHA/AHX - Store A AND X AND (high byte + 1) absolute,Y (unstable)
+        case 0x9F: {
+            uint8_t lo = read(m_pc++);
+            uint8_t hi = read(m_pc++);
+            uint8_t val = m_a & m_x & (hi + 1);
+            uint16_t addr = ((static_cast<uint16_t>(hi) << 8) | lo) + m_y;
+            if ((lo + m_y) > 0xFF) {
+                addr = (static_cast<uint16_t>(val) << 8) | ((lo + m_y) & 0xFF);
+            }
+            write(addr, val);
+            cycles = 5;
+            break;
+        }
+
+        // SHA/AHX - Store A AND X AND (high byte + 1) (indirect),Y (unstable)
+        case 0x93: {
+            uint8_t ptr = read(m_pc++);
+            uint8_t lo = read(ptr);
+            uint8_t hi = read((ptr + 1) & 0xFF);
+            uint8_t val = m_a & m_x & (hi + 1);
+            uint16_t addr = ((static_cast<uint16_t>(hi) << 8) | lo) + m_y;
+            if ((lo + m_y) > 0xFF) {
+                addr = (static_cast<uint16_t>(val) << 8) | ((lo + m_y) & 0xFF);
+            }
+            write(addr, val);
+            cycles = 6;
+            break;
+        }
+
+        // TAS/SHS - Transfer A AND X to SP, then store A AND X AND (high byte + 1) (unstable)
+        case 0x9B: {
+            uint8_t lo = read(m_pc++);
+            uint8_t hi = read(m_pc++);
+            m_sp = m_a & m_x;
+            uint8_t val = m_a & m_x & (hi + 1);
+            uint16_t addr = ((static_cast<uint16_t>(hi) << 8) | lo) + m_y;
+            if ((lo + m_y) > 0xFF) {
+                addr = (static_cast<uint16_t>(val) << 8) | ((lo + m_y) & 0xFF);
+            }
+            write(addr, val);
+            cycles = 5;
+            break;
+        }
+
+        // LAS - Load A, X, and SP with (SP AND memory)
+        case 0xBB: {
+            uint16_t addr = addr_absolute_y(page_crossed);
+            uint8_t val = read(addr) & m_sp;
+            m_a = m_x = m_sp = val;
+            update_zero_negative(val);
+            cycles = 4 + (page_crossed ? 1 : 0);
+            break;
+        }
+
+        // XAA/ANE - A = (A | magic) & X & imm (highly unstable, magic varies)
+        case 0x8B: {
+            uint8_t v = read(addr_immediate());
+            m_a = (m_a | 0xEE) & m_x & v;
+            update_zero_negative(m_a);
+            cycles = 2;
+            break;
+        }
+
+        // KIL/JAM opcodes - these halt the CPU on real hardware
+        // We treat them as 2-cycle NOPs to avoid infinite loops
+        case 0x02: case 0x12: case 0x22: case 0x32: case 0x42: case 0x52:
+        case 0x62: case 0x72: case 0x92: case 0xB2: case 0xD2: case 0xF2:
+            cycles = 2;
+            break;
+
         // Unknown/remaining opcodes - treat as NOP
         default: cycles = 2; break;
     }

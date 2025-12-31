@@ -170,6 +170,11 @@ void PPU::step() {
             m_v = (m_v & ~0x7BE0) | (m_t & 0x7BE0);
         }
 
+        // Evaluate sprites for scanline 0 at cycle 257
+        // This ensures sprites are ready before scanline 0 starts rendering
+        if (m_cycle == 257) {
+            evaluate_sprites_for_scanline(0);
+        }
 
         // Prefetch first two tiles for scanline 0 during cycles 321-336
         if (m_cycle >= 321 && m_cycle <= 336 && (m_mask & 0x18) != 0) {
@@ -534,6 +539,10 @@ void PPU::render_pixel() {
 }
 
 void PPU::evaluate_sprites() {
+    evaluate_sprites_for_scanline(m_scanline);
+}
+
+void PPU::evaluate_sprites_for_scanline(int scanline) {
     m_sprite_count = 0;
     m_sprite_zero_hit_possible = false;
 
@@ -545,7 +554,7 @@ void PPU::evaluate_sprites() {
     uint8_t sprite_height = (m_ctrl & 0x20) ? 16 : 8;
 
     for (int i = 0; i < 64 && m_sprite_count < 8; i++) {
-        int diff = m_scanline - m_oam[i * 4];
+        int diff = scanline - m_oam[i * 4];
 
         if (diff >= 0 && diff < sprite_height) {
             if (m_sprite_count < 8) {

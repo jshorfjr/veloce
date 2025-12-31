@@ -52,6 +52,7 @@ private:
     uint8_t get_background_pixel();
     uint8_t get_sprite_pixel(uint8_t& sprite_priority);
     void evaluate_sprites();
+    void evaluate_sprites_for_scanline(int scanline);
     void load_background_shifters();
     void update_shifters();
 

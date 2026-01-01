@@ -1,0 +1,144 @@
+{
+  "description": "NES Emulator Test Configuration",
+  "repository": "https://github.com/christopherpow/nes-test-roms.git",
+  "timeout_seconds": 10,
+
+  "test_suites": {
+    "cpu_instructions": {
+      "name": "CPU Instructions",
+      "description": "Tests all 6502 CPU instructions for correctness",
+      "priority": "critical",
+      "tests": [
+        {"path": "instr_test-v5/rom_singles/01-basics.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/02-implied.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/03-immediate.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/04-zero_page.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/05-zp_xy.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/06-absolute.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/07-abs_xy.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/08-ind_x.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/09-ind_y.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/10-branches.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/11-stack.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/12-jmp_jsr.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/13-rts.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/14-rti.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/15-brk.nes", "expected": "pass"},
+        {"path": "instr_test-v5/rom_singles/16-special.nes", "expected": "pass"}
+      ]
+    },
+
+    "cpu_timing": {
+      "name": "CPU Timing",
+      "description": "Tests CPU instruction cycle timing",
+      "priority": "high",
+      "tests": [
+        {"path": "cpu_timing_test6/cpu_timing_test.nes", "expected": "pass"},
+        {"path": "branch_timing_tests/1.Branch_Basics.nes", "expected": "pass"},
+        {"path": "branch_timing_tests/2.Backward_Branch.nes", "expected": "pass"},
+        {"path": "branch_timing_tests/3.Forward_Branch.nes", "expected": "pass"},
+        {"path": "instr_timing/rom_singles/1-instr_timing.nes", "expected": "pass"},
+        {"path": "instr_timing/rom_singles/2-branch_timing.nes", "expected": "pass"}
+      ]
+    },
+
+    "cpu_interrupts": {
+      "name": "CPU Interrupts",
+      "description": "Tests NMI and IRQ handling",
+      "priority": "high",
+      "tests": [
+        {"path": "cpu_interrupts_v2/rom_singles/1-cli_latency.nes", "expected": "pass"},
+        {"path": "cpu_interrupts_v2/rom_singles/2-nmi_and_brk.nes", "expected": "pass"},
+        {"path": "cpu_interrupts_v2/rom_singles/3-nmi_and_irq.nes", "expected": "pass"},
+        {"path": "cpu_interrupts_v2/rom_singles/4-irq_and_dma.nes", "expected": "pass"},
+        {"path": "cpu_interrupts_v2/rom_singles/5-branch_delays_irq.nes", "expected": "pass"}
+      ]
+    },
+
+    "ppu_vbl_nmi": {
+      "name": "PPU VBlank/NMI",
+      "description": "Tests VBlank flag and NMI timing",
+      "priority": "critical",
+      "tests": [
+        {"path": "ppu_vbl_nmi/rom_singles/01-vbl_basics.nes", "expected": "pass"},
+        {"path": "ppu_vbl_nmi/rom_singles/02-vbl_set_time.nes", "expected": "pass"},
+        {"path": "ppu_vbl_nmi/rom_singles/03-vbl_clear_time.nes", "expected": "known_fail", "notes": "Off by 1-2 cycles"},
+        {"path": "ppu_vbl_nmi/rom_singles/04-nmi_control.nes", "expected": "pass"},
+        {"path": "ppu_vbl_nmi/rom_singles/05-nmi_timing.nes", "expected": "pass"},
+        {"path": "ppu_vbl_nmi/rom_singles/06-suppression.nes", "expected": "pass"},
+        {"path": "ppu_vbl_nmi/rom_singles/07-nmi_on_timing.nes", "expected": "pass"},
+        {"path": "ppu_vbl_nmi/rom_singles/08-nmi_off_timing.nes", "expected": "pass"},
+        {"path": "ppu_vbl_nmi/rom_singles/09-even_odd_frames.nes", "expected": "pass"},
+        {"path": "ppu_vbl_nmi/rom_singles/10-even_odd_timing.nes", "expected": "pass"}
+      ]
+    },
+
+    "ppu_sprite": {
+      "name": "PPU Sprites",
+      "description": "Tests sprite rendering and sprite 0 hit",
+      "priority": "high",
+      "tests": [
+        {"path": "sprite_hit_tests_2005.10.05/01.basics.nes", "expected": "pass"},
+        {"path": "sprite_hit_tests_2005.10.05/02.alignment.nes", "expected": "pass"},
+        {"path": "sprite_hit_tests_2005.10.05/03.corners.nes", "expected": "pass"},
+        {"path": "sprite_hit_tests_2005.10.05/04.flip.nes", "expected": "pass"},
+        {"path": "sprite_hit_tests_2005.10.05/05.left_clip.nes", "expected": "pass"},
+        {"path": "sprite_hit_tests_2005.10.05/06.right_edge.nes", "expected": "pass"},
+        {"path": "sprite_hit_tests_2005.10.05/07.screen_bottom.nes", "expected": "pass"},
+        {"path": "sprite_hit_tests_2005.10.05/08.double_height.nes", "expected": "pass"},
+        {"path": "sprite_hit_tests_2005.10.05/09.timing_basics.nes", "expected": "pass"},
+        {"path": "sprite_hit_tests_2005.10.05/10.timing_order.nes", "expected": "pass"},
+        {"path": "sprite_hit_tests_2005.10.05/11.edge_timing.nes", "expected": "pass"}
+      ]
+    },
+
+    "ppu_misc": {
+      "name": "PPU Miscellaneous",
+      "description": "Other PPU tests",
+      "priority": "medium",
+      "tests": [
+        {"path": "ppu_open_bus/ppu_open_bus.nes", "expected": "known_fail", "notes": "Open bus decay not implemented"},
+        {"path": "oam_read/oam_read.nes", "expected": "pass"},
+        {"path": "oam_stress/oam_stress.nes", "expected": "pass"}
+      ]
+    },
+
+    "mmc3": {
+      "name": "MMC3 Mapper",
+      "description": "Tests MMC3 (Mapper 4) scanline counter and IRQ",
+      "priority": "critical",
+      "tests": [
+        {"path": "mmc3_test_2/rom_singles/1-clocking.nes", "expected": "pass"},
+        {"path": "mmc3_test_2/rom_singles/2-details.nes", "expected": "known_fail", "notes": "Counter should clock 241 times"},
+        {"path": "mmc3_test_2/rom_singles/3-A12_clocking.nes", "expected": "pass"},
+        {"path": "mmc3_test_2/rom_singles/4-scanline_timing.nes", "expected": "known_fail", "notes": "Scanline 0 timing edge case"},
+        {"path": "mmc3_test_2/rom_singles/5-MMC3.nes", "expected": "pass"},
+        {"path": "mmc3_test_2/rom_singles/6-MMC3_alt.nes", "expected": "known_fail", "notes": "Alternate behavior variant"}
+      ]
+    },
+
+    "apu": {
+      "name": "APU",
+      "description": "Audio Processing Unit tests",
+      "priority": "medium",
+      "tests": [
+        {"path": "apu_test/rom_singles/1-len_ctr.nes", "expected": "pass"},
+        {"path": "apu_test/rom_singles/2-len_table.nes", "expected": "pass"},
+        {"path": "apu_test/rom_singles/3-irq_flag.nes", "expected": "pass"},
+        {"path": "apu_test/rom_singles/4-jitter.nes", "expected": "pass"},
+        {"path": "apu_test/rom_singles/5-len_timing.nes", "expected": "pass"},
+        {"path": "apu_test/rom_singles/6-irq_flag_timing.nes", "expected": "pass"},
+        {"path": "apu_test/rom_singles/7-dmc_basics.nes", "expected": "pass"},
+        {"path": "apu_test/rom_singles/8-dmc_rates.nes", "expected": "pass"}
+      ]
+    }
+  },
+
+  "known_issues": {
+    "ppu_open_bus": "PPU data bus decay not implemented - very few games require this",
+    "vbl_clear_time": "VBL flag clear timing off by 1-2 cycles",
+    "mmc3_details": "Counter clocking count precision",
+    "mmc3_scanline_timing": "Scanline 0 IRQ timing edge case",
+    "cpu_dummy_writes": "Dummy write side effects on PPU registers"
+  }
+}

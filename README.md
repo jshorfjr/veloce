@@ -283,9 +283,24 @@ Intentional. Game input is blocked while Settings -> Input is open.
 - Check config directory is writable
 - States are per-ROM (by CRC32)
 
-## License
+## Testing
 
-MIT License - See LICENSE file.
+### NES Emulator Tests
+
+The NES plugin includes a comprehensive test suite using the [nes-test-roms](https://github.com/christopherpow/nes-test-roms) collection:
+
+```bash
+# Run all tests (auto-clones test ROMs, cleans up after)
+cd plugins/nes/tests
+./run_tests.sh
+
+# Or use Python runner with JSON output for CI
+python3 test_runner.py --json
+```
+
+**Test Categories:** CPU instructions, PPU rendering, mapper accuracy (MMC3), APU
+
+See [plugins/nes/README.md](plugins/nes/README.md) for detailed test documentation.
 
 ## Acknowledgments
 
@@ -293,3 +308,7 @@ MIT License - See LICENSE file.
 - [SDL2](https://www.libsdl.org/) - Cross-platform multimedia
 - [nlohmann/json](https://github.com/nlohmann/json) - JSON library
 - [nes-test-roms](https://github.com/christopherpow/nes-test-roms) - NES emulator test ROMs for accuracy validation
+
+## License
+
+MIT License - See LICENSE file.

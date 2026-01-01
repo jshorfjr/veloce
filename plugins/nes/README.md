@@ -65,22 +65,105 @@ When debug mode is enabled, the following information is logged to stderr:
 
 ## Testing
 
-The NES plugin is validated against the [nes-test-roms](https://github.com/christopherpow/nes-test-roms) test suite. To run tests with debug output:
+The NES plugin includes a comprehensive test suite that validates emulator accuracy using the [nes-test-roms](https://github.com/christopherpow/nes-test-roms) collection.
+
+### Quick Start
 
 ```bash
-DEBUG=1 ./veloce path/to/test.nes
+# Run all tests (clones test ROMs automatically, cleans up after)
+cd plugins/nes/tests
+./run_tests.sh
+
+# Or use the Python runner
+python3 test_runner.py
 ```
 
-### Test Results
+### Test Runner Options
+
+#### Bash Script (`run_tests.sh`)
+
+```bash
+./run_tests.sh              # Run all tests
+./run_tests.sh cpu          # Run CPU tests only
+./run_tests.sh ppu          # Run PPU tests only
+./run_tests.sh mapper       # Run mapper tests only
+./run_tests.sh apu          # Run APU tests only
+./run_tests.sh --keep       # Keep test ROMs after completion
+./run_tests.sh --verbose    # Show detailed output
+```
+
+#### Python Runner (`test_runner.py`)
+
+```bash
+python3 test_runner.py              # Run all tests
+python3 test_runner.py cpu ppu      # Run specific categories
+python3 test_runner.py --keep       # Keep test ROMs
+python3 test_runner.py --verbose    # Detailed output
+python3 test_runner.py --json       # JSON output (for CI)
+```
+
+### Test Categories
+
+| Category | Description |
+|----------|-------------|
+| `cpu` | CPU instruction correctness and timing |
+| `ppu` | PPU rendering, VBlank, NMI, sprites |
+| `mapper` | Mapper-specific tests (MMC3, etc.) |
+| `apu` | Audio processing unit |
+| `timing` | General timing accuracy |
+
+### Test Results Summary
 
 | Test Suite | Status | Notes |
 |------------|--------|-------|
-| MMC3 1-clocking | PASS | A12 clocking via PPUADDR |
-| MMC3 3-A12_clocking | PASS | A12 edge detection |
-| MMC3 5-MMC3 | PASS | MMC3-specific behavior |
-| MMC3 2-details | Partial | PPU frame timing (241 clocks) needs work |
+| CPU Instructions (v5) | **PASS** | All 16 instruction tests |
+| CPU Timing | **PASS** | Cycle-accurate timing |
+| CPU Interrupts | **PASS** | NMI/IRQ handling |
+| PPU VBlank/NMI | **9/10** | One edge-case timing issue |
+| PPU Sprites | **PASS** | Sprite 0 hit, overflow |
+| MMC3 Core | **PASS** | Clocking, A12, basic behavior |
+| MMC3 Details | Partial | Edge-case timing |
 
-Test ROM output is displayed when `DEBUG=1` is set. The emulator automatically detects test ROMs using the blargg signature (`0xDE 0xB0 0x61` at $6001-$6003) and reports results from $6000.
+### Known Issues
+
+These tests fail but represent edge cases that rarely affect games:
+
+| Test | Issue | Impact |
+|------|-------|--------|
+| `03-vbl_clear_time` | VBL flag clear off by 1-2 cycles | Very few games affected |
+| `ppu_open_bus` | Open bus decay not implemented | Minimal game impact |
+| `2-details` (MMC3) | Counter clock count precision | Edge case |
+| `4-scanline_timing` (MMC3) | Scanline 0 timing edge case | Rare |
+
+### Continuous Integration
+
+For CI systems, use the JSON output:
+
+```bash
+python3 test_runner.py --json > results.json
+```
+
+The exit code is 0 if all tests pass (excluding known failures), 1 otherwise.
+
+### Adding New Tests
+
+Edit `tests/test_config.json` to add new test cases:
+
+```json
+{
+  "test_suites": {
+    "my_suite": {
+      "name": "My Test Suite",
+      "description": "Description of tests",
+      "priority": "high",
+      "tests": [
+        {"path": "path/to/test.nes", "expected": "pass"},
+        {"path": "path/to/known_fail.nes", "expected": "known_fail", "notes": "Why it fails"}
+      ]
+    }
+  }
+}
+```
 
 ## Architecture
 
@@ -89,3 +172,41 @@ The NES plugin implements:
 - **PPU** - Picture Processing Unit with background/sprite rendering
 - **APU** - Audio Processing Unit with pulse, triangle, noise, and DMC channels
 - **Cartridge** - iNES/NES 2.0 ROM loading with mapper support
+
+### Component Overview
+
+```
+plugins/nes/src/
+├── nes_plugin.cpp      # Plugin entry point, main loop
+├── cpu.cpp/hpp         # 6502 CPU emulation
+├── ppu.cpp/hpp         # PPU (graphics) emulation
+├── apu.cpp/hpp         # APU (audio) emulation
+├── bus.cpp/hpp         # Memory bus and I/O
+├── cartridge.cpp/hpp   # ROM loading and parsing
+└── mappers/
+    ├── mapper.hpp      # Base mapper interface
+    ├── mapper_000.cpp  # NROM
+    ├── mapper_001.cpp  # MMC1
+    ├── mapper_002.cpp  # UxROM
+    ├── mapper_003.cpp  # CNROM
+    ├── mapper_004.cpp  # MMC3
+    └── ...             # Additional mappers
+```
+
+### Test ROM Detection
+
+The emulator automatically detects blargg-style test ROMs by checking for the signature `0xDE 0xB0 0x61` at addresses $6001-$6003. When detected:
+- Result byte at $6000 is monitored (0x00 = running, 0x80 = reset, 0x81 = passed)
+- Debug output shows test status and result codes
+- Emulator exits automatically when test completes
+
+## Performance Notes
+
+The emulator is optimized for speed while maintaining accuracy:
+
+- IRQ checks performed once per CPU instruction (not per PPU cycle)
+- MMC3 A12 monitoring uses early-exit optimization
+- Debug logging disabled in release builds
+- Hot paths avoid unnecessary allocations
+
+For performance-critical testing, ensure `DEBUG` environment variable is not set.

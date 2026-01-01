@@ -172,7 +172,16 @@ bool Application::initialize(int argc, char* argv[]) {
 }
 
 void Application::run() {
-    const double target_frame_time = 1.0 / 60.0988;  // NES NTSC frame rate
+    // NTSC NES frame timing: 60.0988 fps = 16.6393ms per frame
+    // This is derived from the master clock: 21.477272 MHz / 4 / 262 / 341 = 60.0988 Hz
+    // Hardware-accurate timing is critical for speedruns and TAS.
+    const double target_frame_time = 1.0 / 60.0988;
+    bool audio_started = false;
+
+    // Set audio sync mode - DynamicRate is the default for TAS compatibility
+    // It maintains deterministic frame timing while achieving low audio latency
+    // through subtle resampling (max +/-0.5%, completely inaudible)
+    m_audio_manager->set_sync_mode(AudioSyncMode::DynamicRate);
 
     while (m_running && !m_quit_requested) {
         uint64_t frame_start = WindowManager::get_ticks();
@@ -188,19 +197,40 @@ void Application::run() {
         if (!m_paused || m_frame_advance_requested) {
             run_emulation_frame();
             m_frame_advance_requested = false;
+
+            // Start audio playback once buffer has enough samples
+            // With DynamicRate mode, this threshold is much lower (~24ms vs 139ms)
+            if (!audio_started && m_audio_manager->is_buffer_ready()) {
+                m_audio_manager->resume();
+                audio_started = true;
+            }
+        } else {
+            audio_started = false;  // Reset when paused
         }
 
         // Render
         render();
 
-        // Frame timing
+        // Hardware-accurate frame timing with precision spin-wait
+        // Dynamic rate control in the audio system compensates for any minor
+        // timing drift, allowing us to use spin-waiting for precise frame pacing.
         uint64_t frame_end = WindowManager::get_ticks();
         double frame_time = static_cast<double>(frame_end - frame_start) / frequency;
+        double adjusted_target = target_frame_time / m_speed_multiplier;
 
         // Sleep to maintain target frame rate
-        if (m_speed_multiplier == 1.0f && frame_time < target_frame_time) {
-            double sleep_time = (target_frame_time - frame_time) * 1000.0;
-            SDL_Delay(static_cast<uint32_t>(sleep_time));
+        if (m_speed_multiplier == 1.0f && frame_time < adjusted_target) {
+            double sleep_time = (adjusted_target - frame_time) * 1000.0;
+            // Use a more accurate sleep by sleeping slightly less and spinning
+            if (sleep_time > 2.0) {
+                SDL_Delay(static_cast<uint32_t>(sleep_time - 1.0));
+            }
+            // Spin for remaining time for more accurate timing
+            while (true) {
+                uint64_t now = WindowManager::get_ticks();
+                double elapsed = static_cast<double>(now - frame_start) / frequency;
+                if (elapsed >= adjusted_target) break;
+            }
         }
     }
 }
@@ -390,9 +420,10 @@ bool Application::load_rom(const std::string& path) {
     // Update window title
     m_window_manager->set_title("Veloce - " + path);
 
-    // Unpause and start emulation
+    // Unpause emulation - audio will start automatically once buffer is ready
+    // This prevents initial audio crackling from buffer underruns
     m_paused = false;
-    m_audio_manager->resume();
+    // Note: audio_manager->resume() is called in run() once buffer is ready
 
     std::cout << "ROM loaded successfully" << std::endl;
     return true;

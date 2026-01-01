@@ -38,7 +38,18 @@ target_include_directories(nes_plugin PRIVATE
 set_target_properties(nes_plugin PROPERTIES
     PREFIX ""
     OUTPUT_NAME "nes"
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/plugins
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/plugins
 )
+
+# Handle multi-config generators (Visual Studio, Xcode)
+foreach(CONFIG_TYPE IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
+    string(TOUPPER ${CONFIG_TYPE} CONFIG_TYPE_UPPER)
+    set_target_properties(nes_plugin PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY_${CONFIG_TYPE_UPPER} ${CMAKE_BINARY_DIR}/bin/plugins
+        RUNTIME_OUTPUT_DIRECTORY_${CONFIG_TYPE_UPPER} ${CMAKE_BINARY_DIR}/bin/plugins
+    )
+endforeach()
 
 # Platform-specific settings
 if(WIN32)
@@ -48,12 +59,3 @@ elseif(APPLE)
 else()
     set_target_properties(nes_plugin PROPERTIES SUFFIX ".so")
 endif()
-
-# Copy plugin to plugins directory in build output
-# Handle both single-config (Makefiles) and multi-config (Visual Studio) generators
-add_custom_command(TARGET nes_plugin POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin/plugins
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:nes_plugin> ${CMAKE_BINARY_DIR}/bin/plugins/
-    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:nes_plugin>/../plugins
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:nes_plugin> $<TARGET_FILE_DIR:nes_plugin>/../plugins/
-)

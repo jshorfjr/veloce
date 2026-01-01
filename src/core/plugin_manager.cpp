@@ -43,7 +43,10 @@ bool PluginManager::initialize(const std::string& plugin_dir) {
 
     // Try multiple search paths
     std::vector<fs::path> search_paths = {
-        exe_path / "build" / plugin_dir,  // For running from repo root
+        exe_path / "plugins",             // For running from build/bin (Windows/MSVC)
+        exe_path / ".." / "plugins",      // For running from build/bin (look in build/plugins)
+        exe_path / "build" / "bin" / "plugins",  // For running from repo root
+        exe_path / "build" / plugin_dir,  // For running from repo root (legacy)
         exe_path / plugin_dir,            // For running from build dir
         exe_path / ".." / plugin_dir,     // For running from build/bin (go up to build, then lib)
         fs::path(plugin_dir),

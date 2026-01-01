@@ -40,7 +40,8 @@ public:
     virtual void scanline() {}
 
     // PPU address change notification (for MMC3 A12 clocking from PPUADDR writes)
-    virtual void notify_ppu_addr_change(uint16_t old_addr, uint16_t new_addr) {}
+    // frame_cycle is (scanline * 341 + cycle) for proper A12 filter timing
+    virtual void notify_ppu_addr_change(uint16_t old_addr, uint16_t new_addr, uint32_t frame_cycle) {}
 
     // PPU address bus notification (for MMC3 A12 clocking during rendering)
     // Called for ALL PPU address bus activity including nametable/attribute fetches

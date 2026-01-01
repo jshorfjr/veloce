@@ -43,7 +43,7 @@ public:
     void mapper_scanline();
 
     // Notify mapper of PPU address changes (for MMC3 A12 clocking)
-    void notify_ppu_addr_change(uint16_t old_addr, uint16_t new_addr);
+    void notify_ppu_addr_change(uint16_t old_addr, uint16_t new_addr, uint32_t frame_cycle);
 
     // Notify mapper of PPU address bus activity during rendering (for A12 tracking)
     void notify_ppu_address_bus(uint16_t address, uint32_t frame_cycle);

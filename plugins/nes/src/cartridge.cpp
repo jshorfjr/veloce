@@ -241,9 +241,9 @@ void Cartridge::scanline() {
     }
 }
 
-void Cartridge::notify_ppu_addr_change(uint16_t old_addr, uint16_t new_addr) {
+void Cartridge::notify_ppu_addr_change(uint16_t old_addr, uint16_t new_addr, uint32_t frame_cycle) {
     if (m_mapper) {
-        m_mapper->notify_ppu_addr_change(old_addr, new_addr);
+        m_mapper->notify_ppu_addr_change(old_addr, new_addr, frame_cycle);
     }
 }
 

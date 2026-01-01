@@ -1,6 +1,6 @@
 #include "mapper_000.hpp"
+#include "../debug.hpp"
 #include <cstdio>
-#include <cstdlib>
 
 namespace nes {
 
@@ -49,14 +49,7 @@ void Mapper000::cpu_write(uint16_t address, uint8_t value) {
         if (!m_prg_ram->empty()) {
             (*m_prg_ram)[address & 0x1FFF] = value;
             // Debug first few writes (only in debug mode)
-            static bool debug_mode = false;
-            static bool debug_checked = false;
-            if (!debug_checked) {
-                const char* env = std::getenv("DEBUG");
-                debug_mode = env && (env[0] == '1');
-                debug_checked = true;
-            }
-            if (debug_mode) {
+            if (is_debug_mode()) {
                 static int write_count = 0;
                 if (write_count < 5) {
                     fprintf(stderr, "PRG RAM write: $%04X = %02X\n", address, value);

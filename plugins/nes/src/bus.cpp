@@ -4,9 +4,9 @@
 #include "apu.hpp"
 #include "cartridge.hpp"
 #include "mappers/mapper.hpp"
+#include "debug.hpp"
 
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 
 namespace nes {
@@ -180,9 +180,9 @@ void Bus::mapper_irq_clear() {
     }
 }
 
-void Bus::notify_ppu_addr_change(uint16_t old_addr, uint16_t new_addr) {
+void Bus::notify_ppu_addr_change(uint16_t old_addr, uint16_t new_addr, uint32_t frame_cycle) {
     if (m_cartridge) {
-        m_cartridge->notify_ppu_addr_change(old_addr, new_addr);
+        m_cartridge->notify_ppu_addr_change(old_addr, new_addr, frame_cycle);
     }
 }
 
@@ -209,14 +209,7 @@ int Bus::get_mirror_mode() const {
 
 void Bus::check_test_output() {
     // Only check in debug mode
-    static bool debug_mode = false;
-    static bool debug_checked = false;
-    if (!debug_checked) {
-        const char* env = std::getenv("DEBUG");
-        debug_mode = env && (env[0] == '1' || env[0] == 'y' || env[0] == 'Y');
-        debug_checked = true;
-    }
-    if (!debug_mode) return;
+    if (!is_debug_mode()) return;
 
     // Check for test ROM signature: 0xDE 0xB0 0x61 at $6001-$6003
     uint8_t sig1 = cpu_read(0x6001);

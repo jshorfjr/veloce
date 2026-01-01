@@ -1,20 +1,6 @@
 #include "mapper_003.hpp"
+#include "../debug.hpp"
 #include <cstdio>
-#include <cstdlib>
-
-namespace {
-    bool g_debug_mode = false;
-    bool g_debug_checked = false;
-
-    bool is_debug_mode() {
-        if (!g_debug_checked) {
-            const char* env = std::getenv("DEBUG");
-            g_debug_mode = env && (env[0] == '1' || env[0] == 'y' || env[0] == 'Y');
-            g_debug_checked = true;
-        }
-        return g_debug_mode;
-    }
-}
 
 namespace nes {
 

@@ -608,7 +608,8 @@ uint8_t PPU::cpu_read(uint16_t address) {
             // Increment VRAM address and notify mapper (for MMC3 A12 clocking)
             uint16_t old_v = m_v;
             m_v += (m_ctrl & 0x04) ? 32 : 1;
-            m_bus.notify_ppu_addr_change(old_v, m_v);
+            uint32_t fc = static_cast<uint32_t>(m_scanline * 341 + m_cycle);
+            m_bus.notify_ppu_addr_change(old_v, m_v, fc);
             break;
         }
     }
@@ -680,7 +681,8 @@ void PPU::cpu_write(uint16_t address, uint8_t value) {
                 m_t = (m_t & 0xFF00) | value;
                 m_v = m_t;
                 // Notify mapper of address change (for MMC3 A12 clocking)
-                m_bus.notify_ppu_addr_change(old_v, m_v);
+                uint32_t fc = static_cast<uint32_t>(m_scanline * 341 + m_cycle);
+                m_bus.notify_ppu_addr_change(old_v, m_v, fc);
             }
             m_w = !m_w;
             break;
@@ -690,7 +692,8 @@ void PPU::cpu_write(uint16_t address, uint8_t value) {
             // Increment VRAM address and notify mapper (for MMC3 A12 clocking)
             uint16_t old_v = m_v;
             m_v += (m_ctrl & 0x04) ? 32 : 1;
-            m_bus.notify_ppu_addr_change(old_v, m_v);
+            uint32_t fc = static_cast<uint32_t>(m_scanline * 341 + m_cycle);
+            m_bus.notify_ppu_addr_change(old_v, m_v, fc);
             break;
         }
     }

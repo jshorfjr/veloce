@@ -29,7 +29,7 @@ public:
     bool irq_pending(uint32_t frame_cycle = 0) override;
     void irq_clear() override { m_irq_pending = false; m_irq_pending_at_cycle = 0; }
     void scanline() override;
-    void notify_ppu_addr_change(uint16_t old_addr, uint16_t new_addr) override;
+    void notify_ppu_addr_change(uint16_t old_addr, uint16_t new_addr, uint32_t frame_cycle) override;
     void notify_ppu_address_bus(uint16_t address, uint32_t frame_cycle) override;
     void notify_frame_start() override;
 
@@ -39,8 +39,7 @@ public:
 
 private:
     void update_banks();
-    void clock_counter_on_a12(bool a12, uint16_t addr = 0, int scanline = -1, int cycle = -1);
-    void clock_counter_on_a12_fast(bool a12, uint32_t frame_cycle);  // Optimized version
+    void clock_counter_on_a12_fast(bool a12, uint32_t frame_cycle);
 
     // Bank select register
     uint8_t m_bank_select = 0;
@@ -65,7 +64,8 @@ private:
 
     // IRQ delay: accounts for CPU/PPU synchronization timing
     // MMC3 IRQ signal propagation is nearly immediate on real hardware
-    // Testing shows we need minimal delay for correct scanline timing tests
+    // but there's a small delay before the CPU sees it.
+    // This delay is in PPU cycles.
     static constexpr uint32_t IRQ_DELAY_CYCLES = 0;
     uint32_t m_irq_pending_at_cycle = 0;  // Frame cycle when IRQ was triggered
 

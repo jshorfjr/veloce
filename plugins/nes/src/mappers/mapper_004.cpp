@@ -107,22 +107,7 @@ void Mapper004::update_banks() {
     }
 }
 
-// Original version for PPUADDR-triggered calls (with scanline/cycle parameters)
-void Mapper004::clock_counter_on_a12(bool a12, uint16_t addr, int scanline, int cycle) {
-    (void)addr;
-    constexpr uint32_t FILTER_THRESHOLD = 16;
-
-    uint32_t frame_cycle;
-    if (scanline < 0 || cycle < 0) {
-        frame_cycle = m_last_a12_cycle + FILTER_THRESHOLD + 1;
-    } else {
-        frame_cycle = static_cast<uint32_t>(scanline * 341 + cycle);
-    }
-
-    clock_counter_on_a12_fast(a12, frame_cycle);
-}
-
-// Optimized version - called from notify_ppu_address_bus when A12 changes
+// Called from notify_ppu_address_bus and notify_ppu_addr_change when A12 changes
 void Mapper004::clock_counter_on_a12_fast(bool a12, uint32_t frame_cycle) {
     constexpr uint32_t FILTER_THRESHOLD = 16;
 
@@ -146,6 +131,9 @@ void Mapper004::clock_counter_on_a12_fast(bool a12, uint32_t frame_cycle) {
                 m_irq_counter--;
             }
 
+            // Standard MMC3 behavior: IRQ triggers whenever counter is 0 after clocking
+            // (Some clone MMC3s only trigger on transition to 0, but most games
+            // expect the standard behavior)
             if (m_irq_counter == 0 && m_irq_enabled) {
                 if (m_irq_pending_at_cycle == 0 && !m_irq_pending) {
                     m_irq_pending_at_cycle = frame_cycle;
@@ -283,7 +271,7 @@ void Mapper004::scanline() {
     // The A12-based clocking provides more accurate timing for most games
 }
 
-void Mapper004::notify_ppu_addr_change(uint16_t old_addr, uint16_t new_addr) {
+void Mapper004::notify_ppu_addr_change(uint16_t old_addr, uint16_t new_addr, uint32_t frame_cycle) {
     (void)old_addr;
 
     // Only consider addresses in the CHR range ($0000-$1FFF) for A12 clocking
@@ -293,7 +281,8 @@ void Mapper004::notify_ppu_addr_change(uint16_t old_addr, uint16_t new_addr) {
     }
 
     bool new_a12 = (new_addr & 0x1000) != 0;
-    clock_counter_on_a12(new_a12, new_addr);
+    // Use the real frame_cycle for proper A12 filter timing
+    clock_counter_on_a12_fast(new_a12, frame_cycle);
 }
 
 void Mapper004::notify_ppu_address_bus(uint16_t address, uint32_t frame_cycle) {
